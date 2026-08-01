@@ -1,0 +1,6 @@
+{
+  "name": "Digital Inheritance Management System",
+  "description": "A modern, responsive blockchain-based digital asset inheritance and nominee management platform UI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
