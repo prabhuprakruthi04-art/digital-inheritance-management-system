@@ -1,15 +1,16 @@
-import dns from 'dns';
-dns.setDefaultResultOrder('ipv4first');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+import dotenv from "dotenv";
+dotenv.config();
+
+import dns from "dns";
+dns.setDefaultResultOrder("ipv4first");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import routes from "./routes/index.js";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
 
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 

@@ -5,10 +5,12 @@ import inheritanceRoutes from "./inheritance.js";
 import nomineeRoutes from "./nominees.js";
 import keyRoutes from "./keys.js";
 import blockchainRoutes from "./blockchain.js";
+import authRoutes from "./auth.js";
 
 const router = Router();
 
 router.use("/", healthRoutes);
+router.use("/api/auth", authRoutes);
 router.use("/api/documents", documentRoutes);
 router.use("/api/inheritance", inheritanceRoutes);
 router.use("/api/nominees", nomineeRoutes);
