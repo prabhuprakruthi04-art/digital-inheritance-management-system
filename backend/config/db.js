@@ -1,31 +1,30 @@
 import mongoose from "mongoose";
 
-let isConnected = false;
-
 export async function connectDB() {
-  if (isConnected) {
-    return mongoose.connection;
-  }
-
-  const uri = process.env.MONGO_URI;
+  const uri = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/digital-inheritance";
+  
   if (!uri) {
     throw new Error("MONGO_URI is not defined in environment variables");
   }
 
-  mongoose.set("strictQuery", true);
-
-  await mongoose.connect(uri, {
-    serverSelectionTimeoutMS: 10000,
-  });
-  isConnected = true;
-  console.log("MongoDB Connected");
-  return mongoose.connection;
+  await mongoose.connect(uri);
+  console.log("MongoDB Connected Successfully");
 }
 
 export function getConnectionState() {
+  const stateNames = {
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting",
+  };
+
+  const readyState = mongoose.connection.readyState;
+
   return {
-    readyState: mongoose.connection.readyState,
-    host: mongoose.connection.host,
-    name: mongoose.connection.name,
+    readyState: readyState,
+    status: stateNames[readyState] || "unknown",
+    host: mongoose.connection.host || "N/A",
+    name: mongoose.connection.name || "N/A",
   };
 }
