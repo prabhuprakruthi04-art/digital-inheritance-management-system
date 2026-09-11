@@ -1,29 +1,73 @@
-const express = require("express");
+import express from "express";
+
 const router = express.Router();
-const User = require("../models/User");
 
-// Register User
-router.post("/register", async (req, res) => {
+// 1. Owner Settings Endpoint (/api/owner/settings)
+router.post("/owner/settings", async (req, res) => {
   try {
-    const { fullName, email, password } = req.body;
+    const settingsData = req.body;
+    console.log("Saving Owner Settings:", settingsData);
 
-    const newUser = new User({
-      fullName,
-      email,
-      password,
-    });
-
-    await newUser.save();
-
-    res.status(201).json({
-      message: "User registered successfully",
-      user: newUser,
+    return res.status(200).json({
+      success: true,
+      message: "Owner settings saved successfully.",
+      data: settingsData,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 
-module.exports = router;
+// 2. Heartbeat Verification Ping Endpoint (/api/heartbeat/ping)
+router.post("/heartbeat/ping", async (req, res) => {
+  try {
+    const { ownerId, verifiedAt } = req.body;
+    console.log("Heartbeat Ping Received:", ownerId, verifiedAt);
+
+    return res.status(200).json({
+      success: true,
+      message: "Heartbeat status updated successfully.",
+      timestamp: verifiedAt || new Date().toISOString(),
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 3. Assets Listing Endpoint (/api/assets)
+router.get("/assets", async (req, res) => {
+  try {
+    const sampleAssets = [
+      {
+        _id: "ast-1",
+        title: "Property Deed & Will",
+        category: "Legal",
+        nominee: "Rahul",
+        security: "Encrypted",
+        fileName: "will_and_testament.pdf",
+      },
+      {
+        _id: "ast-2",
+        title: "SBI Bank Account Credentials",
+        category: "General",
+        nominee: "Anita",
+        security: "Protected",
+        fileName: "bank_access.pdf",
+      },
+      {
+        _id: "ast-3",
+        title: "Gmail Access Recovery Keys",
+        category: "General",
+        nominee: "Mithila",
+        security: "Encrypted",
+        fileName: "gmail_recovery.txt",
+      },
+    ];
+
+    return res.status(200).json(sampleAssets);
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+export default router;

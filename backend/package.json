@@ -1,8 +1,9 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Digital Inheritance Management System (DIMS) Backend",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
@@ -11,15 +12,23 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
+    "@vladmandic/face-api": "^1.7.15",
+    "axios": "^1.19.0",
     "bcryptjs": "^3.0.3",
+    "canvas": "^3.2.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "ethers": "^6.17.0",
     "express": "^5.2.1",
+    "form-data": "^4.0.6",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.1",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^9.0.5",
+    "secrets.js-grempe": "^2.0.0",
+    "shamir-secret-sharing": "^0.0.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

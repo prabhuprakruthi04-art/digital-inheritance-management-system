@@ -17,6 +17,9 @@ const documentMetadataSchema = new mongoose.Schema(
       authTag: String,
       algorithm: { type: String, default: "aes-256-gcm" },
     },
+    /** Shamir's Secret Sharing (2-of-3) key shares */
+    dbShare: { type: String, required: true },      // Share 2 (stored in database)
+    backupShare: { type: String, required: true },  // Share 3 (stored as backup/recovery)
     ipfsCid: { type: String, index: true },
     ipfsGatewayUrl: { type: String },
     status: {

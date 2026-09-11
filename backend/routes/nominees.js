@@ -7,7 +7,7 @@ import {
   deleteNominee,
   updateVerificationStatus,
   submitClaim,
-} from "../controllers/nomineeController.js";
+} from "../controllers/nomineeRecordController.js";
 
 const router = Router();
 

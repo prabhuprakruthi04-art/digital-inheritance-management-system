@@ -1,30 +1,17 @@
 import { Router } from "express";
-import { getConnectionState } from "../config/db.js";
+import mongoose from "mongoose";
 
 const router = Router();
 
+// GET /api/health
 router.get("/", (req, res) => {
-  res.json({
-    success: true,
-    service: "Cloud-Based Digital Inheritance Management System API",
-    version: "1.0.0",
-    architecture: "Hybrid: Firebase (auth/UI) + MongoDB Atlas (inheritance records)",
+  const dbStatus = mongoose.connection.readyState === 1 ? "Connected" : "Disconnected";
+
+  res.status(200).json({
+    status: "OK",
+    message: "Backend operational",
+    database: dbStatus,
     timestamp: new Date().toISOString(),
-  });
-});
-
-router.get("/health", (req, res) => {
-  const db = getConnectionState();
-  const dbHealthy = db.readyState === 1;
-
-  res.status(dbHealthy ? 200 : 503).json({
-    success: dbHealthy,
-    status: dbHealthy ? "healthy" : "degraded",
-    checks: {
-      api: "up",
-      mongodb: dbHealthy ? "connected" : "disconnected",
-    },
-    database: db,
   });
 });
 
