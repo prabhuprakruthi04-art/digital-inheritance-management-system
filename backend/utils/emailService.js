@@ -65,15 +65,17 @@ export const sendNomineeInheritanceTriggerEmail = async ({
   ownerName = "Vault Owner",
   transferAuthId,
   claimsPortalUrl = "http://localhost:5173/nominee/claims",
-  demoOtp = "123456",
+  otp = "",
+  demoOtp = "",
 }) => {
+  const securityOtp = otp || demoOtp || Math.floor(100000 + Math.random() * 900000).toString();
   const subject = `[DIMS Notification] Digital Inheritance Transfer Activated: ${transferAuthId}`;
   
   const text = `Hello ${nomineeName},\n\n` +
     `An automated inactivity trigger has transitioned the digital estate of ${ownerName} to unlocked status.\n` +
     `Your unique Transfer Authorization ID is: ${transferAuthId}\n` +
-    `Security Verification OTP: ${demoOtp}\n\n` +
-    `Access the Claims Portal to verify and reconstruct your assigned assets:\n${claimsPortalUrl}\n\n` +
+    `Confidential Verification OTP: ${securityOtp}\n\n` +
+    `Access the Claims Portal to verify your identity and reconstruct your assigned assets:\n${claimsPortalUrl}\n\n` +
     `Best regards,\nDigital Inheritance Management System (DIMS)`;
 
   const html = `
@@ -92,7 +94,7 @@ export const sendNomineeInheritanceTriggerEmail = async ({
       <div style="background-color: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
         <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700;">Transfer Authorization ID</div>
         <div style="font-size: 24px; font-family: monospace; font-weight: 900; color: #10b981; margin: 8px 0;">${transferAuthId}</div>
-        <div style="font-size: 12px; color: #94a3b8;">Security Verification OTP: <code style="color: #38bdf8; font-weight: bold;">${demoOtp}</code></div>
+        <div style="font-size: 12px; color: #94a3b8; margin-top: 10px;">Confidential Verification OTP: <code style="color: #38bdf8; font-weight: 900; font-size: 18px; letter-spacing: 0.15em;">${securityOtp}</code></div>
       </div>
       
       <div style="text-align: center; margin: 32px 0;">

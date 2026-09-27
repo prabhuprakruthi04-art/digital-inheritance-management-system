@@ -1,3 +1,4 @@
+// backend/models/User.js
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -9,7 +10,6 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
     email: {
       type: String,
       required: true,
@@ -17,49 +17,37 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-
     password: {
       type: String,
       required: true,
     },
-
     role: {
       type: String,
       enum: ["owner", "nominee", "admin"],
       default: "owner",
     },
-
     status: {
       type: String,
       enum: ["ACTIVE", "INACTIVE", "LOCKED"],
       default: "ACTIVE",
     },
-
     walletAddress: {
       type: String,
       trim: true,
       default: "",
     },
-
-    // 1. Biometric 128D Face Landmark Vector Array
     faceDescriptor: {
       type: [Number],
       default: [],
     },
-
-    // 2. Heartbeat Timestamp (Updated when user verifies face/heartbeat)
     lastActiveDate: {
       type: Date,
       default: Date.now,
     },
-
-    // 3. Inactivity Threshold in SECONDS (Default 120s / 2 mins for demo testing)
     inactivityThresholdSeconds: {
       type: Number,
       default: 120,
     },
-
-    // 4. Inheritance Lifecycle Status
     inheritanceStatus: {
       type: String,
       enum: [
@@ -73,24 +61,29 @@ const userSchema = new mongoose.Schema(
       ],
       default: "ACTIVE",
     },
-
     lastTierNotified: {
       type: Number,
       default: 0,
     },
-
+    // Track warning notifications count (0 to 3)
+    inactivityWarningCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 3,
+    },
+    lastWarningSentAt: {
+      type: Date,
+      default: null,
+    },
     assignedNomineeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Nominee",
     },
-
-    // Generated upon expiration for nominee claim access
     transferAuthId: {
       type: String,
       default: null,
     },
-
-    // 5. Verification Audit Trail Array
     verificationHistory: [
       {
         timestamp: {
@@ -111,24 +104,17 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password prior to saving
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (err) {
-    next(err);
-  }
+// Pre-save hook using async function without 'next' parameter to prevent Kareem errors
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Instance method to check password validity
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Generate JWT token for RBAC authentication
 userSchema.methods.generateAuthToken = function () {
   const secret = process.env.JWT_SECRET || "default_jwt_secret_dims";
   return jwt.sign(
@@ -144,5 +130,4 @@ userSchema.methods.generateAuthToken = function () {
 };
 
 const User = mongoose.model("User", userSchema);
-
 export default User;

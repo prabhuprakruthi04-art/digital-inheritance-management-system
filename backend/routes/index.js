@@ -13,6 +13,7 @@ import biometricRoutes from "./biometrics.js";
 import heartbeatRoutes from "./heartbeat.js";
 import notificationRoutes from "./notifications.js";
 import Asset from "../models/Asset.js";
+import DocumentMetadata from "../models/DocumentMetadata.js";
 
 const router = Router();
 
@@ -46,15 +47,66 @@ router.use("/api/face", biometricRoutes);
 router.use("/api/heartbeat", heartbeatRoutes);
 router.use("/api/notifications", notificationRoutes);
 
-// GET /api/assets endpoint backed by MongoDB Atlas
+// GET /api/assets endpoint backed by MongoDB Atlas (Asset & DocumentMetadata collections)
 router.get("/api/assets", async (req, res) => {
   try {
-    const assets = await Asset.find();
-    if (assets && assets.length > 0) {
-      return res.status(200).json(assets);
+    const [assets, documents] = await Promise.all([
+      Asset.find().lean().catch(() => []),
+      DocumentMetadata.find().lean().catch(() => []),
+    ]);
+
+    const combined = [];
+    const seenCids = new Set();
+    const seenIds = new Set();
+
+    const addItem = (item, isDoc = false) => {
+      const cid = item.ipfsCid || item.cid || item.ipfsHash;
+      const id = (item._id || item.id || "").toString();
+      if (cid && seenCids.has(cid)) return;
+      if (id && seenIds.has(id)) return;
+      if (cid) seenCids.add(cid);
+      if (id) seenIds.add(id);
+
+      // Normalize category
+      let category = item.category || item.assetType || (isDoc ? "General" : "General");
+      const lower = category.toLowerCase();
+      if (lower.includes("legal") || lower.includes("will") || lower.includes("deed")) {
+        category = "Legal";
+      } else if (lower.includes("media") || lower.includes("video") || lower.includes("photo")) {
+        category = "Media";
+      } else if (lower.includes("financial") || lower.includes("bank")) {
+        category = "Financial";
+      }
+
+      combined.push({
+        _id: id,
+        id: id,
+        title: item.title || item.name || item.originalFileName || "Asset Record",
+        name: item.name || item.title || item.originalFileName || "Asset Record",
+        category,
+        assetType: category,
+        nominee: item.nominee || item.nomineeEmail || "Assigned Nominee",
+        nomineeEmail: item.nomineeEmail || null,
+        security: item.security || "2-of-3 SSS Shares (AES-256-GCM)",
+        fileName: item.fileName || item.originalFileName || item.name || "asset.bin",
+        originalFileName: item.originalFileName || item.fileName || item.name || "asset.bin",
+        mimeType: item.mimeType || "application/octet-stream",
+        fileSize: item.fileSize || 0,
+        ipfsCid: cid || null,
+        cid: cid || null,
+        status: item.status || "SYNCED",
+        createdAt: item.createdAt || new Date(),
+      });
+    };
+
+    assets.forEach((a) => addItem(a, false));
+    documents.forEach((d) => addItem(d, true));
+
+    if (combined.length > 0) {
+      return res.status(200).json(combined);
     }
   } catch (err) {
-    console.warn("Could not query Asset collection, returning fallback array:", err.message);
+    console.warn("Could not query Asset/Document collection, returning fallback array:", err.message);
   }
 
   res.status(200).json([
@@ -70,7 +122,7 @@ router.get("/api/assets", async (req, res) => {
     {
       _id: "ast-2",
       title: "SBI Bank Account Credentials",
-      category: "General",
+      category: "Financial",
       nominee: "Anita",
       security: "Protected",
       fileName: "bank_access.pdf",
@@ -86,6 +138,28 @@ router.get("/api/assets", async (req, res) => {
       ipfsCid: "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
     },
   ]);
+});
+
+// DELETE /api/assets/:id
+router.delete("/api/assets/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const isMongoId = /^[0-9a-fA-F]{24}$/.test(id);
+    const deleteFilter = isMongoId ? { _id: id } : { $or: [{ ipfsCid: id }, { cid: id }] };
+
+    await Promise.all([
+      Asset.deleteMany(deleteFilter).catch(() => {}),
+      DocumentMetadata.deleteMany(deleteFilter).catch(() => {}),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: `Asset ${id} successfully removed from vault.`,
+    });
+  } catch (err) {
+    console.error("Asset deletion error:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 export default router;

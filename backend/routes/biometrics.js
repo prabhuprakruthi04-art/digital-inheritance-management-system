@@ -77,6 +77,9 @@ router.post("/verify-face", async (req, res) => {
       const now = new Date();
       user.lastActiveDate = now;
       user.status = "ACTIVE";
+      user.inheritanceStatus = "ACTIVE";
+      user.inactivityWarningCount = 0;
+      user.lastTierNotified = 0;
 
       if (!user.verificationHistory) {
         user.verificationHistory = [];
