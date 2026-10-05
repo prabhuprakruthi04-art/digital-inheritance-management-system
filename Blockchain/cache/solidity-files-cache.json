@@ -1,0 +1,77 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\hp\\Downloads\\digital-inheritance-management-system (1)\\Blockchain\\contracts\\DigitalInheritance.sol": {
+      "lastModificationDate": 1788856018050,
+      "contentHash": "c7b63b6bf001bce41e3c8aecdacea00f",
+      "sourceName": "contracts/DigitalInheritance.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DigitalInheritance"
+      ]
+    },
+    "C:\\Users\\hp\\Downloads\\digital-inheritance-management-system (1)\\Blockchain\\contracts\\DocumentRegistry.sol": {
+      "lastModificationDate": 1786038124037,
+      "contentHash": "250c09f8bfc19f65de490cff05da11eb",
+      "sourceName": "contracts/DocumentRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DocumentRegistry"
+      ]
+    }
+  }
+}

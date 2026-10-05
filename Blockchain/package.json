@@ -1,0 +1,12 @@
+{
+  "name": "blockchain-dims",
+  "version": "1.0.0",
+  "description": "Smart contracts and migrations for DIMS",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js --network ganache",
+    "test": "hardhat test"
+  },
+  "keywords": ["solidity", "ethereum", "smart-contracts", "inheritance"],
+  "license": "ISC"
+}
