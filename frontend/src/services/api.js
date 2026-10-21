@@ -52,7 +52,8 @@ API.interceptors.response.use(
         requestUrl.includes("/auth/login") ||
         requestUrl.includes("/auth/signin") ||
         requestUrl.includes("/biometrics") ||
-        requestUrl.includes("/face");
+        requestUrl.includes("/face") ||
+        requestUrl.includes("/claims");
 
       if (!isLoginOrBiometric) {
         localStorage.removeItem("token");

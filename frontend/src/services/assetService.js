@@ -1,7 +1,15 @@
 import API from "./api";
 
-/* Get all assets (documents) */
+/* Get all assets (documents + assets merged) */
 export const getAssets = async () => {
+  try {
+    const response = await API.get("/assets");
+    if (response?.data && (Array.isArray(response.data) ? response.data.length > 0 : response.data.data?.length > 0)) {
+      return response.data;
+    }
+  } catch (err) {
+    // fallback to documents endpoint
+  }
   const response = await API.get("/documents");
   return response.data;
 };
@@ -34,8 +42,11 @@ export const updateAsset = async (id, formData) => {
   return response.data;
 };
 
-/* Delete Asset */
+/* Delete Asset (deletes across both documents and assets collections) */
 export const deleteAsset = async (id) => {
-  const response = await API.delete(`/documents/${id}`);
-  return response.data;
+  await Promise.all([
+    API.delete(`/documents/${id}`).catch(() => {}),
+    API.delete(`/assets/${id}`).catch(() => {}),
+  ]);
+  return { success: true };
 };

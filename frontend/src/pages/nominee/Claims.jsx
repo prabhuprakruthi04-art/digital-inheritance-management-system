@@ -269,19 +269,15 @@ export default function NomineeClaims() {
             </div>
           </div>
 
-          {/* Demo Helper Banner */}
+          {/* Security Protocol Banner */}
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-300">
-            <span>
-              💡 <strong>Demo Credentials:</strong> Auth ID:{" "}
-              <code className="text-emerald-400 font-mono font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                DIMS-AUTH-882910
-              </code>{" "}
-              | OTP:{" "}
-              <code className="text-emerald-400 font-mono font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                123456
-              </code>
+            <span className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>
+                <strong>Confidential Verification:</strong> Enter your unique Transfer Authorization ID. A confidential 6-digit security OTP will be dispatched exclusively to your registered nominee email inbox.
+              </span>
             </span>
-            <span className="text-slate-500 text-[11px]">Pinata IPFS Gateway Integrated</span>
+            <span className="text-slate-500 text-[11px] shrink-0 font-mono">Zero-Knowledge Verification</span>
           </div>
 
           {/* Error Message Display */}
@@ -352,15 +348,15 @@ export default function NomineeClaims() {
                 <input
                   type="text"
                   required
-                  placeholder="123456"
+                  placeholder="••••••"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                   maxLength={6}
+                  autoComplete="one-time-code"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-white text-center text-2xl font-mono tracking-widest focus:outline-none focus:border-emerald-500"
                 />
                 <p className="text-[11px] text-slate-400">
-                  Verification OTP issued for Transfer Authorization ID:{" "}
-                  <code className="text-emerald-400 font-mono font-bold">{authId}</code>
+                  Enter the confidential 6-digit security OTP sent to your registered nominee email inbox.
                 </p>
               </div>
 

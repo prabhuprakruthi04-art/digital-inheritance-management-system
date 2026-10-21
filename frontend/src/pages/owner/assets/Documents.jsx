@@ -3,36 +3,77 @@ import AppLayout from "../../../components/layout/AppLayout";
 import { FileText, Film, ExternalLink, Trash2, ShieldCheck, Filter } from "lucide-react";
 import API from "../../../services/api";
 
+const defaultInitialDocs = [
+  {
+    _id: "doc-1",
+    title: "will_and_testament.pdf",
+    fileName: "will_and_testament.pdf",
+    cid: "QmTeGRzjJFmy1QekpkyXgUNjrpu1Mo1LsF3rdW",
+    category: "Legal",
+    security: "2-of-3 SSS Shares",
+  },
+  {
+    _id: "doc-2",
+    title: "property_deed.pdf",
+    fileName: "property_deed.pdf",
+    cid: "QmataUNAiYinNfXACf3rdW9kPky1QekpkyXgUN",
+    category: "General",
+    security: "2-of-3 SSS Shares",
+  },
+  {
+    _id: "doc-3",
+    title: "WhatsApp Video 2026-08-23.mp4",
+    fileName: "WhatsApp Video 2026-08-23.mp4",
+    cid: "QmfFobsESNQpSWkA8k34qgukEquJsBbfieJFCS",
+    category: "Media",
+    security: "2-of-3 SSS Shares",
+  },
+];
+
 export default function Documents() {
-  const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [documents, setDocuments] = useState(() => {
+    try {
+      const local = JSON.parse(localStorage.getItem("shared_assets") || "[]");
+      return Array.isArray(local) && local.length > 0 ? local : defaultInitialDocs;
+    } catch {
+      return defaultInitialDocs;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   const syncDocumentsData = (dataList) => {
-    return dataList.map((item) => {
-      const cat = (item.category || item.assetType || "").toLowerCase();
-      const name = (item.fileName || item.originalFileName || item.title || item.name || "").toLowerCase();
+    if (!Array.isArray(dataList)) return [];
+    return dataList
+      .filter((item) => item && typeof item === "object")
+      .map((item) => {
+        const cat = (item.category || item.assetType || "").toLowerCase();
+        const name = (item.fileName || item.originalFileName || item.title || item.name || "").toLowerCase();
 
-      // Normalize category tags
-      let normalizedCategory = item.category || item.assetType || "General";
-      if (cat === "media" || name.endsWith(".mp4") || name.endsWith(".mov") || name.endsWith(".avi")) {
-        normalizedCategory = "Media";
-      } else if (cat === "legal") {
-        normalizedCategory = "Legal";
-      } else if (cat === "general" || cat === "document" || cat === "financial") {
-        normalizedCategory = "General";
-      }
+        // Normalize category tags
+        let normalizedCategory = item.category || item.assetType || "General";
+        if (cat === "media" || name.endsWith(".mp4") || name.endsWith(".mov") || name.endsWith(".avi")) {
+          normalizedCategory = "Media";
+        } else if (cat === "legal") {
+          normalizedCategory = "Legal";
+        } else if (cat === "general" || cat === "document" || cat === "financial") {
+          normalizedCategory = "General";
+        }
 
-      return {
-        ...item,
-        category: normalizedCategory,
-      };
-    });
+        return {
+          ...item,
+          category: normalizedCategory,
+        };
+      });
   };
 
   const fetchDocuments = async () => {
+    // Failsafe timeout to prevent any potential infinite spinner
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+
     try {
-      setLoading(true);
       const [docRes, assetRes] = await Promise.all([
         API.get("/documents").catch(() => null),
         API.get("/assets").catch(() => null),
@@ -42,11 +83,16 @@ export default function Documents() {
       const assetList = Array.isArray(assetRes?.data) ? assetRes.data : assetRes?.data?.assets || [];
       const localAssets = JSON.parse(localStorage.getItem("shared_assets") || "[]");
 
-      const combined = [...docList, ...assetList, ...localAssets];
+      const combined = [
+        ...(Array.isArray(docList) ? docList : []),
+        ...(Array.isArray(assetList) ? assetList : []),
+        ...(Array.isArray(localAssets) ? localAssets : []),
+      ];
       const seen = new Set();
       const unique = [];
 
       combined.forEach((item) => {
+        if (!item) return;
         const key = item._id || item.id || item.cid || item.ipfsCid;
         if (key && !seen.has(key)) {
           seen.add(key);
@@ -55,37 +101,12 @@ export default function Documents() {
       });
 
       if (unique.length > 0) {
-        setDocuments(syncDocumentsData(unique));
+        const synced = syncDocumentsData(unique);
+        setDocuments(synced);
+        localStorage.setItem("shared_assets", JSON.stringify(synced));
       } else {
-        // Initial fallback items including media
-        const initialDocs = [
-          {
-            _id: "doc-1",
-            title: "will_and_testament.pdf",
-            fileName: "will_and_testament.pdf",
-            cid: "QmTeGRzjJFmy1QekpkyXgUNjrpu1Mo1LsF3rdW",
-            category: "Legal",
-            security: "2-of-3 SSS Shares",
-          },
-          {
-            _id: "doc-2",
-            title: "property_deed.pdf",
-            fileName: "property_deed.pdf",
-            cid: "QmataUNAiYinNfXACf3rdW9kPky1QekpkyXgUN",
-            category: "General",
-            security: "2-of-3 SSS Shares",
-          },
-          {
-            _id: "doc-3",
-            title: "WhatsApp Video 2026-08-23.mp4",
-            fileName: "WhatsApp Video 2026-08-23.mp4",
-            cid: "QmfFobsESNQpSWkA8k34qgukEquJsBbfieJFCS",
-            category: "Media",
-            security: "2-of-3 SSS Shares",
-          },
-        ];
-        setDocuments(syncDocumentsData(initialDocs));
-        localStorage.setItem("shared_assets", JSON.stringify(initialDocs));
+        setDocuments(syncDocumentsData(defaultInitialDocs));
+        localStorage.setItem("shared_assets", JSON.stringify(defaultInitialDocs));
       }
     } catch (err) {
       console.warn("Using synchronized local asset repository:", err);
@@ -94,7 +115,7 @@ export default function Documents() {
         setDocuments(syncDocumentsData(localAssets));
       }
     } finally {
-      // Ensure loading state is ALWAYS dismissed
+      clearTimeout(timer);
       setLoading(false);
     }
   };

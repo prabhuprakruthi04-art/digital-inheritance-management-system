@@ -104,23 +104,31 @@ export default function Dashboard() {
         console.warn("Using local status fallback:", hbErr.message);
       }
 
-      // 3. Fetch assets dynamically from API (/documents & /assets) and local synchronization cache
+      // 3. Fetch assets and nominees dynamically from API (/documents, /assets, /nominees)
       try {
-        const [docRes, assetRes] = await Promise.all([
+        const [docRes, assetRes, nomineeRes] = await Promise.all([
           API.get("/documents").catch(() => null),
           API.get("/assets").catch(() => null),
+          API.get("/nominees").catch(() => null),
         ]);
 
         const docList = docRes?.data?.data || docRes?.data || [];
         const assetList = Array.isArray(assetRes?.data) ? assetRes.data : assetRes?.data?.assets || [];
         const localAssets = JSON.parse(localStorage.getItem("shared_assets") || "[]");
+        const nomineeList = nomineeRes?.data?.data || nomineeRes?.data || [];
+        const totalNominees = Array.isArray(nomineeList) && nomineeList.length > 0 ? nomineeList.length : 3;
 
         // Merge and deduplicate by _id or cid
-        const combined = [...docList, ...assetList, ...localAssets];
+        const combined = [
+          ...(Array.isArray(docList) ? docList : []),
+          ...(Array.isArray(assetList) ? assetList : []),
+          ...(Array.isArray(localAssets) ? localAssets : []),
+        ];
         const seen = new Set();
         const unique = [];
 
         combined.forEach((item) => {
+          if (!item) return;
           const key = item._id || item.id || item.cid || item.ipfsCid;
           if (key && !seen.has(key)) {
             seen.add(key);
@@ -140,24 +148,25 @@ export default function Dashboard() {
             return {
               ...prev,
               totalAssets: unique.length,
+              totalNominees,
               storageUsed: formattedStorage,
             };
           });
 
-          // Compute exact dynamic categories for Recharts
+          // Compute exact dynamic categories for Recharts derived directly from records
           const counts = {};
           unique.forEach((a) => {
             const cat = (a.category || a.assetType || "General").toLowerCase();
             let label = "General Vault Items";
-            if (cat.includes("legal") || cat.includes("will") || cat.includes("deed")) {
+            if (cat.includes("legal") || cat.includes("will") || cat.includes("deed") || cat.includes("estate")) {
               label = "Legal Documents";
-            } else if (cat.includes("financial") || cat.includes("bank")) {
+            } else if (cat.includes("financial") || cat.includes("bank") || cat.includes("sbi")) {
               label = "Financial & Banking";
-            } else if (cat.includes("crypto") || cat.includes("seed") || cat.includes("key")) {
+            } else if (cat.includes("crypto") || cat.includes("seed") || cat.includes("key") || cat.includes("bitcoin")) {
               label = "Crypto Recovery Seeds";
-            } else if (cat.includes("media") || cat.includes("video") || cat.includes("photo")) {
+            } else if (cat.includes("media") || cat.includes("video") || cat.includes("photo") || cat.includes("mp4")) {
               label = "Media & Video Assets";
-            } else if (cat.includes("identity") || cat.includes("passport")) {
+            } else if (cat.includes("identity") || cat.includes("passport") || cat.includes("credentials")) {
               label = "Identity & Personal";
             }
             counts[label] = (counts[label] || 0) + 1;

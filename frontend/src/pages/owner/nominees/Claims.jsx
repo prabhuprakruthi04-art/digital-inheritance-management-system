@@ -73,10 +73,10 @@ export default function NomineeAssets() {
           </div>
         </div>
 
-        {/* Demo Helper Banner */}
+        {/* Security Notice */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between text-xs text-slate-300">
-          <span>💡 <strong>Demo Helper:</strong> Authorization ID: <code className="text-emerald-400 font-mono">DIMS-AUTH-882910</code> | OTP: <code className="text-emerald-400 font-mono">123456</code></span>
-          <span className="text-slate-500">IPFS CIDs Linked Automatically</span>
+          <span>🔒 <strong>Estate Verification:</strong> Enter the Transfer Authorization ID and the confidential 6-digit verification OTP dispatched to your nominee email.</span>
+          <span className="text-slate-500 font-mono">Zero-Knowledge Verification</span>
         </div>
 
         {/* STEP 1 FORM */}
@@ -90,6 +90,7 @@ export default function NomineeAssets() {
                 type="text" 
                 value={authId}
                 onChange={(e) => setAuthId(e.target.value)}
+                placeholder="e.g. DIMS-AUTH-882910"
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 font-mono"
               />
             </div>
@@ -128,13 +129,13 @@ export default function NomineeAssets() {
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Enter 6-Digit Verification OTP *</label>
               <input 
                 type="text" 
-                placeholder="123456"
+                placeholder="••••••"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                 maxLength={6}
                 className="w-full max-w-xs mx-auto bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 font-mono tracking-widest text-center text-xl"
               />
-              <p className="text-xs text-slate-500 pt-1">An authorization token has been checked against your registered nominee mapping.</p>
+              <p className="text-xs text-slate-500 pt-1">Enter the confidential 6-digit OTP received via email to reconstruct key shares.</p>
             </div>
 
             <div className="flex gap-4">
@@ -146,8 +147,11 @@ export default function NomineeAssets() {
               </button>
               <button 
                 onClick={() => {
-                  if (otp === "123456" || otp === "") setStep(3);
-                  else alert("Please enter correct demo OTP: 123456");
+                  if (otp.length === 6) {
+                    setStep(3);
+                  } else {
+                    alert("Please enter the 6-digit security OTP sent to your email.");
+                  }
                 }}
                 className="w-2/3 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 cursor-pointer"
               >

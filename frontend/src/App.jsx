@@ -15,6 +15,8 @@ import Register from "./pages/shared/Register";
 // Owner Pages
 import OwnerDashboard from "./pages/owner/dashboard/Dashboard";
 import OwnerNominees from "./pages/owner/nominees/Nominees";
+import AddNominee from "./pages/owner/nominees/AddNominee";
+import EditNominee from "./pages/owner/nominees/EditNominee";
 import OwnerAssets from "./pages/owner/assets/Assets";
 import AddAsset from "./pages/owner/assets/AddAsset";
 import OwnerDocuments from "./pages/owner/assets/Documents";
@@ -329,6 +331,22 @@ export default function App() {
         element={
           <ProtectedOwnerRoute>
             <OwnerNominees />
+          </ProtectedOwnerRoute>
+        }
+      />
+      <Route
+        path="/owner/nominees/add"
+        element={
+          <ProtectedOwnerRoute>
+            <AddNominee />
+          </ProtectedOwnerRoute>
+        }
+      />
+      <Route
+        path="/owner/nominees/edit/:id"
+        element={
+          <ProtectedOwnerRoute>
+            <EditNominee />
           </ProtectedOwnerRoute>
         }
       />

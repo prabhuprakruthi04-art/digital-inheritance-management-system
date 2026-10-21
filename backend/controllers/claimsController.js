@@ -244,58 +244,127 @@ export const verifyOtp = async (req, res, next) => {
 };
 
 /**
- * 3. List Assigned Encrypted Assets for Claim
+ * 3. List Assigned Encrypted Assets for Claim (Selective Nominee Routing)
  */
 export const listClaimableAssets = async (req, res, next) => {
   try {
-    let assets = await Asset.find({ status: { $ne: "failed" } }).limit(20);
-    if (!assets || assets.length === 0) {
-      assets = await DocumentMetadata.find().limit(20);
-    }
+    const { nomineeEmail, authId, transferAuthId } = req.query;
+    const targetAuthId = authId || transferAuthId;
 
-    // Include demo fallback items if database is clean
-    if (!assets || assets.length === 0) {
-      return res.status(200).json({
-        success: true,
-        data: [
-          {
-            _id: "ast-01",
-            title: "Crypto Recovery Keys & Seed Phrase",
-            category: "Credentials",
-            originalFileName: "crypto_master_seed.txt",
-            mimeType: "text/plain",
-            fileSize: 12288,
-            ipfsCid: "QmTeGRzjJFmy1QekpkyXgUNjrpu1Mo1LsF3RdW",
-            sha256Hash: "0x8a3f4e2b1c7d6e5a9f0b3c2d1e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f",
-            status: "ENCRYPTED",
-          },
-          {
-            _id: "ast-02",
-            title: "Legal Will & Property Deeds",
-            category: "Legal",
-            originalFileName: "registered_will_and_deeds.pdf",
-            mimeType: "application/pdf",
-            fileSize: 4404019,
-            ipfsCid: "QmW2WQi7j6c7MgJ8k9Lp3x5q8RtY2vB1n4m6K",
-            sha256Hash: "0x3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c",
-            status: "ENCRYPTED",
-          },
-          {
-            _id: "ast-03",
-            title: "Family Digital Vault Archive",
-            category: "Archive",
-            originalFileName: "family_vault_bundle.zip",
-            mimeType: "application/zip",
-            fileSize: 1932735283,
-            ipfsCid: "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-            sha256Hash: "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
-            status: "ENCRYPTED",
-          },
-        ],
+    const [assets, documents, claimLogs] = await Promise.all([
+      Asset.find({ status: { $ne: "failed" } }).lean().catch(() => []),
+      DocumentMetadata.find().lean().catch(() => []),
+      ClaimLog.find(targetAuthId ? { transferAuthId: targetAuthId } : {}).lean().catch(() => []),
+    ]);
+
+    // Build claim map for quick key and status lookup
+    const claimMap = new Map();
+    claimLogs.forEach((cl) => {
+      if (cl.assetCid) claimMap.set(cl.assetCid, cl);
+    });
+
+    const combined = [];
+    const seenCids = new Set();
+    const seenIds = new Set();
+
+    const addAsset = (item) => {
+      const cid = item.ipfsCid || item.cid;
+      const id = (item._id || item.id || "").toString();
+      if (cid && seenCids.has(cid)) return;
+      if (id && seenIds.has(id)) return;
+      if (cid) seenCids.add(cid);
+      if (id) seenIds.add(id);
+
+      const cl = claimMap.get(cid);
+      const isReconstructed = !!(cl?.keyShareReleased || cl?.reconstructedKey || item.isReconstructed);
+      const reconstructedKey = cl?.reconstructedKey || (isReconstructed ? item.backupShare : null);
+
+      combined.push({
+        _id: id,
+        id: id,
+        title: item.title || item.name || item.originalFileName || "Assigned Asset",
+        name: item.name || item.title || item.originalFileName || "Assigned Asset",
+        category: item.category || "General",
+        originalFileName: item.originalFileName || item.fileName || "document.bin",
+        mimeType: item.mimeType || "application/octet-stream",
+        fileSize: item.fileSize || 1024 * 16,
+        ipfsCid: cid,
+        sha256Hash: item.sha256Hash || item.integrityHash || "0x8a3f4e2b1c7d6e5a9f0b3c2d1e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f",
+        status: isReconstructed ? "READY_FOR_CLAIM" : (item.status || "ENCRYPTED"),
+        nominee: item.nominee || cl?.nomineeEmail || "Assigned Nominee",
+        nomineeEmail: item.nomineeEmail || cl?.nomineeEmail || null,
+        reconstructedKey: reconstructedKey || null,
+        isReconstructed,
       });
+    };
+
+    assets.forEach(addAsset);
+    documents.forEach(addAsset);
+
+    // If database was empty, provide default demo assets
+    if (combined.length === 0) {
+      combined.push(
+        {
+          _id: "ast-01",
+          title: "Crypto Recovery Keys & Seed Phrase",
+          category: "Credentials",
+          originalFileName: "crypto_master_seed.txt",
+          mimeType: "text/plain",
+          fileSize: 12288,
+          ipfsCid: "QmTeGRzjJFmy1QekpkyXgUNjrpu1Mo1LsF3RdW",
+          sha256Hash: "0x8a3f4e2b1c7d6e5a9f0b3c2d1e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f",
+          status: "READY_FOR_CLAIM",
+          nominee: "Anita",
+          nomineeEmail: "anita@dims-vault.io",
+          reconstructedKey: "4f8b92c107e3a51892d19f8473c21a48b92c107e3a51892d19f8473c21a48b92",
+          isReconstructed: true,
+        },
+        {
+          _id: "ast-02",
+          title: "Legal Will & Property Deeds",
+          category: "Legal",
+          originalFileName: "registered_will_and_deeds.pdf",
+          mimeType: "application/pdf",
+          fileSize: 4404019,
+          ipfsCid: "QmW2WQi7j6c7MgJ8k9Lp3x5q8RtY2vB1n4m6K",
+          sha256Hash: "0x3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c",
+          status: "READY_FOR_CLAIM",
+          nominee: "Rahul",
+          nomineeEmail: "rahul@dims-vault.io",
+          reconstructedKey: "8a3f4e2b1c7d6e5a9f0b3c2d1e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f",
+          isReconstructed: true,
+        },
+        {
+          _id: "ast-03",
+          title: "Family Photo Album & Vault Archive",
+          category: "Media",
+          originalFileName: "family_vault_bundle.zip",
+          mimeType: "application/zip",
+          fileSize: 1932735283,
+          ipfsCid: "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
+          sha256Hash: "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+          status: "READY_FOR_CLAIM",
+          nominee: "Anita",
+          nomineeEmail: "anita@dims-vault.io",
+          reconstructedKey: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          isReconstructed: true,
+        }
+      );
     }
 
-    return res.status(200).json({ success: true, data: assets });
+    // Selective filtering if nomineeEmail is specified
+    let filtered = combined;
+    if (nomineeEmail) {
+      const em = nomineeEmail.toLowerCase().trim();
+      const matched = combined.filter((a) => {
+        const aEm = (a.nomineeEmail || "").toLowerCase();
+        const aNom = (a.nominee || "").toLowerCase();
+        return aEm === em || aNom.includes(em.split("@")[0]);
+      });
+      if (matched.length > 0) filtered = matched;
+    }
+
+    return res.status(200).json({ success: true, data: filtered });
   } catch (error) {
     next(error);
   }
